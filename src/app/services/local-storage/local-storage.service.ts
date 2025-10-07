@@ -2,13 +2,9 @@ import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { BehaviorSubject } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
-import { Category } from '../models/category.interface';
-import { Task } from '../models/task.interface';
-
-const KEY_CATEGORIES = 'app:categories';
-const KEY_TASKS = 'app:tasks';
-const STORAGE_SCHEMA_VERSION = 'app:schemaVersion';
-const CURRENT_SCHEMA = 1;
+import { Category } from '../../models/category.interface';
+import { Task } from '../../models/task.interface';
+import { CURRENT_SCHEMA, KEY_CATEGORIES, KEY_TASKS, STORAGE_SCHEMA_VERSION } from './local-storage.constants';
 
 @Injectable({ providedIn: 'root' })
 export class LocalStorageService {
