@@ -5,16 +5,16 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent
-} from '@ionic/angular/standalone';
+  IonContent, IonButtons, IonButton } from '@ionic/angular/standalone';
 import { CreateTaskComponent } from './components/create-task/create-task.component';
 import { ToDoListComponent } from "./components/to-do-list/to-do-list.component";
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [
+  imports: [IonButton, IonButtons, 
     CommonModule,
     FormsModule,
     IonHeader,
@@ -25,4 +25,11 @@ import { ToDoListComponent } from "./components/to-do-list/to-do-list.component"
     ToDoListComponent
 ]
 })
-export class HomePage { }
+export class HomePage { 
+
+  constructor(private router: Router) {}
+  
+  goCategories() {
+    this.router.navigateByUrl('/categories');
+  }
+}
