@@ -1,14 +1,10 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <ion-title>
-      ToDo List
-    </ion-title>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>ToDo</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+<ion-content class="ion-padding" fullscreen="true">
+  <app-create-task></app-create-task>
+  <app-to-do-list></app-to-do-list>
 </ion-content>
