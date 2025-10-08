@@ -63,7 +63,6 @@ export class CategoriesPage {
 
     try {
       if (this.editingId) {
-        // Preserve createdAt if you want, here we set a new timestamp
         await this.storage.updateCategory({
           id: this.editingId,
           name,

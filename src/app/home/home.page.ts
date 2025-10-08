@@ -5,30 +5,109 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent, IonButtons, IonButton } from '@ionic/angular/standalone';
-import { CreateTaskComponent } from './components/create-task/create-task.component';
-import { ToDoListComponent } from "./components/to-do-list/to-do-list.component";
+  IonContent,
+  IonButtons,
+  IonButton,
+  IonItem,
+  IonInput,
+  IonLabel,
+  IonList,
+  IonCheckbox,
+  IonSelectOption,
+  IonSelect,
+} from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { Category } from '../models/category.interface';
+import { Task } from '../models/task.interface';
+import { LocalStorageService } from '../services/local-storage/local-storage.service';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [IonButton, IonButtons, 
+  imports: [
+    IonCheckbox,
+    IonList,
+    IonLabel,
+    IonItem,
+    IonInput,
+    IonButton,
+    IonButtons,
     CommonModule,
     FormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
     IonContent,
-    CreateTaskComponent,
-    ToDoListComponent
-]
+    IonSelectOption,
+    IonSelect,
+  ],
 })
-export class HomePage { 
+export class HomePage {
+  tasks$: Observable<Task[]>;
+  categories$: Observable<Category[]>;
 
-  constructor(private router: Router) {}
-  
+  newTitle = '';
+  selectedCategoryId: string | null = null;
+
+  private filterCategoryIdSubject = new BehaviorSubject<string | null>(null);
+  filterCategoryId$ = this.filterCategoryIdSubject.asObservable();
+
+  visibleTasks$: Observable<Task[]>;
+
+  private categoriesCache: Category[] = [];
+
+  constructor(private router: Router, private storage: LocalStorageService) {
+    this.tasks$ = this.storage.tasks$;
+    this.categories$ = this.storage.categories$;
+
+    this.categories$.subscribe((c) => (this.categoriesCache = c || []));
+
+    this.visibleTasks$ = combineLatest([
+      this.tasks$,
+      this.filterCategoryId$,
+    ]).pipe(
+      map(([tasks, catId]) => {
+        if (!catId) return tasks;
+        return tasks.filter((t) => t.categoryId === catId);
+      })
+    );
+  }
+
+  onFilterChange(value: string | null) {
+    this.filterCategoryIdSubject.next(value ?? null);
+  }
+
+  clearFilter() {
+    this.filterCategoryIdSubject.next(null);
+  }
+
+  async addTask() {
+    const title = this.newTitle?.trim();
+    if (!title) return;
+    await this.storage.createTask({
+      title,
+      categoryId: this.selectedCategoryId ?? null,
+    });
+    this.newTitle = '';
+    this.selectedCategoryId = null;
+  }
+
+  async toggleTask(id: string) {
+    await this.storage.toggleTaskDone(id);
+  }
+
+  async removeTask(id: string) {
+    await this.storage.removeTask(id);
+  }
+
+  getCategoryName(categoryId?: string | null) {
+    if (!categoryId) return '';
+    const c = this.categoriesCache.find((x) => x.id === categoryId);
+    return c ? c.name : '';
+  }
+
   goCategories() {
     this.router.navigateByUrl('/categories');
   }
