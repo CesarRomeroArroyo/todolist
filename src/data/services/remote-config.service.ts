@@ -1,4 +1,3 @@
-// src/data/services/remote-config.service.ts
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 
