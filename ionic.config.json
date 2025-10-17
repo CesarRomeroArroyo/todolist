@@ -1,7 +1,7 @@
 {
-  "name": "todolist",
+  "name": "ionic-todo-app",
+  "type": "angular",
   "integrations": {
-    "capacitor": {}
-  },
-  "type": "angular-standalone"
+    "cordova": {}
+  }
 }

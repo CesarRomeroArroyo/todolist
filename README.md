@@ -1,219 +1,112 @@
-# todolist — Ejecutar en Android e iOS (Ionic 7 + Capacitor 7)
+# Comandos básicos — Ionic Angular + Cordova (iOS/Android)
 
-Guía clara para compilar y correr la app en **Android** (dispositivo/emulador) e **iOS** (simulador/dispositivo). 
+## Prerrequisitos rápidos
+- Node LTS 20: `nvm use 20.19.4`
+- Ionic CLI (opcional): `npm i -g @ionic/cli`
+- Cordova CLI: `npm i -g cordova`
+- JDK 17 (Android): exporta
+  ```bash
+  export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home"
+  export PATH="$JAVA_HOME/bin:$PATH"
+  ```
+- Android SDK (si compilas Android):
+  ```bash
+  export ANDROID_HOME="$HOME/Library/Android/sdk"
+  export ANDROID_SDK_ROOT="$ANDROID_HOME"
+  export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+  ```
 
 ---
 
-## 1) Requisitos
+## Instalar y correr en web
+```bash
+npm install
+npx ionic serve
+```
 
-- **Node.js 18+** (LTS recomendado)
-- **npm 9+** o **pnpm/yarn**
-- **Ionic CLI 7+**
-  ```bash
-  npm i -g @ionic/cli
-  ```
-- **Capacitor 7** (ya incluido en el proyecto)
-
-### Android
-- **Android Studio** (SDK Platform **Android 14 / API 34** y **Build-Tools**)
-- **JDK 17** (Gradle debe usarlo)
-- **ADB** en el PATH (`adb devices` debe listar el teléfono)
-- Depuración USB activa en tu dispositivo
-
-### iOS (solo macOS)
-- **Xcode 15+**
-- **CocoaPods**
-  ```bash
-  sudo gem install cocoapods
-  ```
-- Cuenta de **Apple Developer** para correr en dispositivo físico
+## Build web (genera /www)
+```bash
+npx ionic build
+```
 
 ---
 
-## 2) Scripts disponibles (desde `package.json`)
+## iOS (Xcode)
+### Preparar proyecto iOS
+```bash
+cordova platform add ios          # una vez
+cordova prepare ios               # o: ionic cordova prepare ios --no-build
+open platforms/ios/*.xcworkspace  # abre Xcode
+```
 
+### Generar .ipa (desde Xcode)
+1. En **Signing & Capabilities**: selecciona **Team** y **Automatically manage signing**.
+2. Menú **Product → Archive**.
+3. En **Organizer → Distribute App**:
+   - **App Store Connect (Upload)** para TestFlight/App Store, o
+   - **Ad Hoc / Development (Export)** para obtener un **.ipa** local.
+
+### .ipa sin firmar (opcional, para re-firmado externo)
+```bash
+cd platforms/ios
+xcodebuild -workspace MyApp.xcworkspace -scheme MyApp -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO clean build
+cd build/Release-iphoneos
+mkdir Payload && cp -R MyApp.app Payload/ && zip -yr MyApp-unsigned.ipa Payload && rm -rf Payload
+```
+
+---
+
+## Android
+### Preparar proyecto Android
+```bash
+cordova platform add android      # una vez
+cordova prepare android           # o: ionic cordova prepare android --no-build
+```
+
+### APK debug (rápido)
+```bash
+cordova build android
+# salida: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### APK release firmado (recomendado)
+1) Crear keystore (una vez):
+```bash
+mkdir -p signing
+keytool -genkeypair -v -keystore signing/myapp.keystore -alias myapp -keyalg RSA -keysize 2048 -validity 36500
+```
+2) `build.json` en la raíz (ejemplo):
 ```json
 {
-  "start": "ionic serve",
-  "build": "ionic build",
-  "sync": "npx cap sync",
-  "android": "npx cap open android",
-  "ios": "npx cap open ios"
+  "android": {
+    "release": {
+      "keystore": "signing/myapp.keystore",
+      "storePassword": "TU_STORE_PASSWORD",
+      "alias": "myapp",
+      "password": "TU_KEY_PASSWORD",
+      "keystoreType": ""
+    }
+  }
 }
 ```
-
-- **start** → desarrollo web (Ionic dev server)
-- **build** → compila `www/` para Capacitor
-- **sync** → `npx cap sync` (sincroniza web → nativo)
-- **android** → abre el proyecto nativo en Android Studio
-- **ios** → abre el proyecto nativo en Xcode
-
----
-
-## 3) Instalación del proyecto
-
+3) Build:
 ```bash
-# Clonar
-git clone https://github.com/CesarRomeroArroyo/todolist.git
-cd todolist
+cordova build android --release -- --packageType=apk --buildConfig=build.json
+# salida: platforms/android/app/build/outputs/apk/release/app-release.apk
+```
 
-# Instalar dependencias
-npm install
-
+### AAB (Play Console)
+```bash
+cordova build android --release -- --packageType=bundle --buildConfig=build.json
+# salida: platforms/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 ---
 
-## 4) Preparar plataformas nativas (una sola vez)
-
-```bash
-# Añadir plataformas (si aún no existen)
-npx cap add android
-npx cap add ios
-
-# Compilar la web y sincronizar con nativo
-npm run build
-npx cap sync
-```
-
-> Cada vez que agregues/quites **plugins nativos** o cambies `capacitor.config.ts`, vuelve a ejecutar `npm run build && npx cap sync`.
-
----
-
-## 5) Ejecutar en **Android**
-
-### A) Emulador (AVD)
-1. Abre **Android Studio** → **Device Manager** → crea un AVD (p.ej. Pixel / Android 14).
-2. Compila y sincroniza:
-   ```bash
-   npm run build
-   npx cap sync android
-   ```
-3. Abre el proyecto nativo y ejecuta:
-   ```bash
-   npm run android
-   ```
-
-**Live Reload (emulador/dispositivo)**
-```bash
-ionic cap run android -l --external
-# --external expone la IP en LAN para recarga en caliente
-```
-
-### B) Dispositivo físico
-1. Activa **Depuración USB** y conecta el dispositivo.
-   ```bash
-   adb devices  # debe aparecer como 'device'
-   ```
-2. Construye y sincroniza:
-   ```bash
-   npm run build
-   npx cap sync android
-   ```
-3. Ejecuta con recarga en vivo (opcional) o desde Android Studio:
-   ```bash
-   ionic cap run android --device -l --external
-   # o
-   npm run android
-   ```
-
-**Si falla la compilación (Android):**
-- Verifica que **Gradle usa JDK 17** (Android Studio → Settings → Build → Gradle → *Gradle JDK*).
-- Acepta licencias del SDK:
+## Utilidad
+- Limpiar: `cordova clean ios && cordova clean android`
+- Reinstalar plataformas:
   ```bash
-  yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses
+  cordova platform rm ios android
+  cordova platform add ios android
   ```
-
----
-
-## 6) Ejecutar en **iOS** (macOS)
-
-### A) Simulador de iOS
-```bash
-# Compila + sincroniza
-npm run build
-npx cap sync ios
-
-# Instala pods (primera vez o tras agregar plugins)
-cd ios/App
-pod install
-cd ../..
-
-# Abrir el workspace en Xcode y ejecutar en un simulador
-npm run ios
-```
-
-### B) Dispositivo físico
-1. Conecta el iPhone por USB.
-2. Abre `ios/App/App.xcworkspace` en **Xcode**.
-3. En **Signing & Capabilities**:
-   - Selecciona tu **Team**.
-   - Permite que Xcode gestione el **provisioning**.
-4. En el iPhone (iOS 16+), activa **Developer Mode** si se solicita.
-5. Selecciona tu dispositivo en Xcode y pulsa **Run**.
-
-**Live Reload (LAN)**
-```bash
-ionic cap run ios -l --external
-# Si no arranca el dev server automáticamente:
-ionic serve --external
-# Luego abre y corre el proyecto iOS (la app cargará la URL del dev server)
-```
-
----
-
-## 7) Flujo de desarrollo recomendado
-
-```bash
-# Desarrollo web rápido
-npm run start
-
-# Probar en nativo con recarga (Android/iOS)
-ionic cap run android -l --external
-ionic cap run ios -l --external
-
-# Cuando cambies plugins nativos o la config de Capacitor
-npm run build && npx cap sync
-
-# Abrir IDEs nativos
-npm run android
-npm run ios
-```
-
----
-
-## 8) Builds de producción
-
-### Android (APK/AAB firmado)
-1. Genera un **keystore** (una vez):
-   ```bash
-   keytool -genkey -v -keystore app-release.keystore -alias app -keyalg RSA -keysize 2048 -validity 10000
-   ```
-2. Mueve `app-release.keystore` a `android/app/` y configura `~/.gradle/gradle.properties`:
-   ```
-   MYAPP_UPLOAD_STORE_FILE=app-release.keystore
-   MYAPP_UPLOAD_KEY_ALIAS=app
-   MYAPP_UPLOAD_STORE_PASSWORD=<password>
-   MYAPP_UPLOAD_KEY_PASSWORD=<password>
-   ```
-3. En `android/app/build.gradle`, usa las variables anteriores en `signingConfigs`.
-4. Construye:
-   ```bash
-   npm run build
-   npx cap copy android
-   cd android
-   ./gradlew bundleRelease   # AAB (Play Store)
-   ./gradlew assembleRelease # APK
-   ```
-
-### iOS (Archive/TestFlight/App Store)
-```bash
-npm run build
-npx cap copy ios
-cd ios/App
-pod install
-open App.xcworkspace
-# Xcode: Product → Archive → Distribute
-```
-
----
